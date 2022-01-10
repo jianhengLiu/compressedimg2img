@@ -1,6 +1,11 @@
-//
-// Created by chrisliu on 2021/9/27.
-//
+/*
+ * @Author: Jianheng Liu
+ * @Date: 2021-12-09 21:40:57
+ * @LastEditors: Jianheng Liu
+ * @LastEditTime: 2022-01-09 20:21:49
+ * @Description: Description
+ */
+
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 
@@ -14,33 +19,30 @@
 using namespace std;
 
 namespace compressedimg2img_nodelet_ns {
-    class compressedimg2img_nodelet : public nodelet::Nodelet {
+    class Compressedimg2ImgNodelet : public nodelet::Nodelet {
     public:
-        compressedimg2img_nodelet() {}
+        Compressedimg2ImgNodelet() {}
 
     private:
         virtual void onInit() {
             ros::NodeHandle &nh = getMTNodeHandle();
 
-            sub_img = nh.subscribe("/camera/color/image_raw/compressed", 10, &compressedimg2img_nodelet::img_callback,
+            sub_img = nh.subscribe("/camera/color/image_raw/compressed", 10, &Compressedimg2ImgNodelet::img_callback,
                                    this);
             sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw/compressedDepth", 10,
-                                     &compressedimg2img_nodelet::depth_callback, this);
-            pub_img = nh.advertise<sensor_msgs::Image>("/decompressed_img", 100);
-            pub_depth = nh.advertise<sensor_msgs::Image>("/decompressed_depth_img", 100);
+                                     &Compressedimg2ImgNodelet::depth_callback, this);
+            pub_img = nh.advertise<sensor_msgs::Image>("/decompressed_img", 10);
+            pub_depth = nh.advertise<sensor_msgs::Image>("/decompressed_depth_img", 10);
         }
 
         ros::Subscriber sub_img, sub_depth;
         ros::Publisher pub_img, pub_depth;
 
         void img_callback(const sensor_msgs::CompressedImageConstPtr &img_msg) {
-//    double start_t = ros::Time::now().toSec();
             pub_img.publish(cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::BGR8)->toImageMsg());
-//        cout << "Decompressed Img Cost: " << to_string(ros::Time::now().toSec() - start_t) << endl;
         }
 
         void depth_callback(const sensor_msgs::CompressedImageConstPtr &depth_msg) {
-//    double start_t = ros::Time::now().toSec();
             cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
 
             // Copy message header
@@ -58,11 +60,9 @@ namespace compressedimg2img_nodelet_ns {
             const std::vector<uint8_t> imageData(depth_msg->data.begin() + 12, depth_msg->data.end());
             cv_ptr->image = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
             pub_depth.publish(cv_ptr->toImageMsg());
-
-//    cout << "Decompressed DepthImg Cost: " << to_string(ros::Time::now().toSec() - start_t) << endl;
         }
 
     };
-    PLUGINLIB_EXPORT_CLASS(compressedimg2img_nodelet_ns::compressedimg2img_nodelet, nodelet::Nodelet)
+    PLUGINLIB_EXPORT_CLASS(compressedimg2img_nodelet_ns::Compressedimg2ImgNodelet, nodelet::Nodelet)
 
 }
